@@ -21,6 +21,8 @@ cd queue-server
 
 serverPort=9000 socketPort=8888 socketPort1=9999 socketPort2=9988 socketPort3=8899 node index.js &
 
+serverPort=8000 socketPort=8888 socketPort1=9999 socketPort2=9988 socketPort3=8899 node index.js &
+
 cd ..
 
-npm start
+REACT_APP_QUEUE_PORT=9000 REACT_APP_QUEUE_PORT1=8000 npm start
