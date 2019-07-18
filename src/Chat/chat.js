@@ -28,8 +28,9 @@ class Chat extends Component {
       .then(response => response.text())
       .then(contents => {
         URL = URL + contents;
+        console.log(URL,'URL');
         this.ws = new WebSocket(URL);
-
+        console.log(this.ws,'this.ws');
         this.ws.onopen = () => {
           console.log("connected");
           this.ws.send("getMessage from db");
@@ -37,7 +38,7 @@ class Chat extends Component {
 
         this.ws.onmessage = evt => {
           let message = "";
-
+            console.log(evt.data,'evt.data');
           this.IsJsonString(evt.data)
             ? (message = JSON.parse(evt.data))
             : (message = evt.data);
@@ -72,7 +73,10 @@ class Chat extends Component {
   handleClick = () => {
     if (this.state.message) {
       window.scrollTo(0, document.body.scrollHeight);
-      this.ws.send(this.state.message + "");
+      
+      if (Object.keys(this.ws).length) {
+        this.ws.send(this.state.message + "");
+      }
       this.setState({ message: "" });
     }
   };

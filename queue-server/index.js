@@ -1,21 +1,31 @@
 const http = require("http");
 const client = require("./socketConnector");
 
-let connections = {
-  "9999": 0,
-  "8888": 0
-};
+let connections = {};
+let socketClients = [];
 
-let ws = client.getConn("9999");
-let wss = client.getConn("8888");
+if (process.env.socketPort) {
+  connections[process.env.socketPort] = 0;
+}
+if (process.env.socketPort1) {
+  connections[process.env.socketPort1] = 0;
+}
+if (process.env.socketPort2) {
+  connections[process.env.socketPort2] = 0;
+}
+if (process.env.socketPort3) {
+  connections[process.env.socketPort3] = 0;
+}
 
-ws.onmessage = evt => {
-  connections["9999"] = evt.data;
-};
+for (let i = 0; i < Object.keys(connections).length; i++) {
+  let port = Object.keys(connections)[i];
 
-wss.onmessage = evt => {
-  connections["8888"] = evt.data;
-};
+  socketClients.push(client.getConn(port));
+
+  socketClients[i].onmessage = evt => {
+    connections[Object.keys(connections)[i]] = evt.data;
+  };
+}
 
 const requestHandler = (req, response) => {
   response.writeHead(200, {
@@ -28,18 +38,30 @@ const requestHandler = (req, response) => {
   req.on("data", chunk => (body += chunk));
   req.on("end", () => {
     if (body && JSON.parse(body)["getport"]) {
-      ws.send("users on the server now");
-      wss.send("users on the server now");
+      for (let i = 0; i < socketClients.length; i++) {
+        socketClients[i].send("users on the server now");
+      }
 
-      if (connections["9999"] && connections["8888"]) {
-        parseInt(connections["9999"], 10) > parseInt(connections["8888"], 10)
-          ? response.end(JSON.stringify(8888))
-          : response.end(JSON.stringify(9999));
+      if (Object.keys(connections).length) {
+        let arrayForCheck = [];
+        for (let i = 0; i < Object.keys(connections).length; i++) {
+          const key = Object.keys(connections)[i];
+          if (arrayForCheck.length === 0) {
+            arrayForCheck.push(key);
+            arrayForCheck.push(connections[key]);
+          } else {
+            if (connections[key] < arrayForCheck[1]) {
+              arrayForCheck[0] = key;
+              arrayForCheck[1] = connections[key];
+            }
+          }
+        }
+        response.end(JSON.stringify(parseInt(arrayForCheck[0])));
 
-        connections = {
-          "9999": 0,
-          "8888": 0
-        };
+        for (let i = 0; i < Object.keys(connections).length; i++) {
+          connections[Object.keys(connections)[i]] = 0;
+          console.log(Object.keys(connections)[i],'Object.keys(connections)[i]');
+        }
       }
     } else {
       response.end();
